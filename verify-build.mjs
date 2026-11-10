@@ -1,0 +1,10 @@
+import {createServer} from 'node:http';
+import {readFile} from 'node:fs/promises';
+import {resolve,extname} from 'node:path';
+import {chromium} from 'playwright';
+import {findChrome} from 'file:///C:/Users/mateo/.codex/skills/design-taste-frontend/scripts/lib/cdp.mjs';
+import assert from 'node:assert/strict';
+const root=resolve('dist');const types={'.html':'text/html','.js':'text/javascript','.css':'text/css','.jpg':'image/jpeg','.svg':'image/svg+xml'};
+const server=createServer(async(req,res)=>{try{let path=new URL(req.url,'http://local').pathname;if(!path.startsWith('/jessyhome/')){res.writeHead(404).end();return;}path=resolve(root,path.slice(11)||'index.html');if(!path.startsWith(root)){res.writeHead(403).end();return;}res.setHeader('Content-Type',types[extname(path)]||'application/octet-stream');res.end(await readFile(path));}catch{res.writeHead(404).end();}});
+await new Promise(r=>server.listen(5181,'127.0.0.1',r));const browser=await chromium.launch({executablePath:findChrome(),headless:true});
+try{const p=await browser.newPage({reducedMotion:'reduce'});const errors=[];p.on('pageerror',e=>errors.push(e.message));await p.goto('http://127.0.0.1:5181/jessyhome/');await p.locator('.product-card').first().waitFor();await p.locator('footer').scrollIntoViewIfNeeded();await p.waitForFunction(()=>Array.from(document.images).every(i=>i.complete&&i.naturalWidth>0));assert.equal(await p.locator('.product-card').count(),6);await p.getByRole('link',{name:'Administrar',exact:true}).click();await p.reload();await p.getByRole('heading',{name:'Productos',exact:true}).waitFor();assert.deepEqual(errors,[]);console.log('PASS: build estático bajo /jessyhome/, imágenes locales y recarga directa de #admin.');}finally{await browser.close();server.close();}
