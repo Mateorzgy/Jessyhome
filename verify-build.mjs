@@ -4,7 +4,17 @@ import {resolve,extname} from 'node:path';
 import {chromium} from 'playwright';
 import {findChrome} from 'file:///C:/Users/mateo/.codex/skills/design-taste-frontend/scripts/lib/cdp.mjs';
 import assert from 'node:assert/strict';
-const root=resolve('dist');const types={'.html':'text/html','.js':'text/javascript','.css':'text/css','.jpg':'image/jpeg','.svg':'image/svg+xml'};
+const root=resolve(process.env.BUILD_DIR || 'dist');const types={'.html':'text/html','.js':'text/javascript','.css':'text/css','.jpg':'image/jpeg','.svg':'image/svg+xml'};
 const server=createServer(async(req,res)=>{try{let path=new URL(req.url,'http://local').pathname;if(!path.startsWith('/jessyhome/')){res.writeHead(404).end();return;}path=resolve(root,path.slice(11)||'index.html');if(!path.startsWith(root)){res.writeHead(403).end();return;}res.setHeader('Content-Type',types[extname(path)]||'application/octet-stream');res.end(await readFile(path));}catch{res.writeHead(404).end();}});
 await new Promise(r=>server.listen(5181,'127.0.0.1',r));const browser=await chromium.launch({executablePath:findChrome(),headless:true});
-try{const p=await browser.newPage({reducedMotion:'reduce'});const errors=[];p.on('pageerror',e=>errors.push(e.message));await p.goto('http://127.0.0.1:5181/jessyhome/');await p.locator('.product-card').first().waitFor();await p.locator('footer').scrollIntoViewIfNeeded();await p.waitForFunction(()=>Array.from(document.images).every(i=>i.complete&&i.naturalWidth>0));assert.equal(await p.locator('.product-card').count(),6);await p.getByRole('link',{name:'Administrar',exact:true}).click();await p.reload();await p.getByRole('heading',{name:'Productos',exact:true}).waitFor();assert.deepEqual(errors,[]);console.log('PASS: build estático bajo /jessyhome/, imágenes locales y recarga directa de #admin.');}finally{await browser.close();server.close();}
+try{const p=await browser.newPage({reducedMotion:'reduce'});const errors=[];p.on('pageerror',e=>errors.push(e.message));await p.goto('http://127.0.0.1:5181/jessyhome/');await p.locator('.product-card').first().waitFor();await p.locator('footer').scrollIntoViewIfNeeded();await p.waitForFunction(()=>Array.from(document.images).every(i=>i.complete&&i.naturalWidth>0));assert.equal(await p.locator('.product-card').count(),6);await p.getByRole('link',{name:'Administrar',exact:true}).click();await p.reload();await p.getByRole('heading',{name:'Productos',exact:true}).waitFor();assert.deepEqual(errors,[]);
+await p.route('**/config.js', route=>route.fulfill({contentType:'text/javascript',body:'window.JESSYHOME_CONFIG={supabaseUrl:"https://example.supabase.co",supabaseKey:"public-test-key"};'}));
+await p.route('https://example.supabase.co/**',route=>route.fulfill({contentType:'application/json',body:'[]'}));
+await p.goto('http://127.0.0.1:5181/jessyhome/');
+await p.getByText('Pronto habrá más por acá.').waitFor();
+assert.equal(await p.getByText('Catálogo de demostración',{exact:false}).count(),0);
+await p.getByRole('link',{name:'Administrar',exact:true}).click();
+await p.getByRole('button',{name:'Ingresar',exact:true}).waitFor();
+assert.deepEqual(errors,[]);
+console.log('PASS: config.js activa conexión remota y exige login (API simulada).');
+console.log('PASS: build estático bajo /jessyhome/, imágenes locales y recarga directa de #admin.');}finally{await browser.close();server.close();}

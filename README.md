@@ -38,17 +38,15 @@ Usar la clave **publishable** o **anon**, nunca `service_role` ni una clave secr
 
 Las imágenes son públicas por diseño. Ocultar un producto no revoca una URL de imagen previamente compartida. Eliminar una foto del producto quita su referencia; los archivos antiguos permanecen en Storage para evitar borrados accidentales. Pueden limpiarse desde el panel de Supabase cuando ya no se utilicen.
 
-## Publicar en GitHub Pages
+## Publicar directamente en GitHub Pages
 
-1. Crear un repositorio, por ejemplo `jessyhome`, y subir **el contenido de esta carpeta como raíz del repositorio**, incluido `.github/workflows/pages.yml`. No subir `node_modules`, `.env.local` ni el proyecto Crealia.
-2. En Settings → Secrets and variables → Actions → Variables, crear `VITE_SUPABASE_URL` y `VITE_SUPABASE_ANON_KEY` con los mismos valores públicos.
-3. En Settings → Pages, elegir **GitHub Actions** como origen.
-4. Subir a la rama `main` o ejecutar el workflow **Publicar JessyHome**. El workflow instala, prueba, compila y publica `dist`.
-5. Agregar la URL final en la configuración Site URL de Supabase Auth. El login actual usa correo y contraseña; no depende de redirects.
+La web compilada está en `docs/`. En GitHub → Settings → Pages, seleccioná **Deploy from a branch**, rama **main**, carpeta **/docs**, y guardá.
 
-Los recursos usan rutas relativas y la administración usa un hash: funciona tanto en `usuario.github.io/jessyhome/` como en un dominio propio, sin reglas de servidor ni errores 404 al recargar el panel.
+Para conectar Supabase editá `docs/config.js`: `supabaseUrl` es la URL del proyecto y `supabaseKey` es la clave Publishable o anon. Subí ese archivo. No se necesitan variables ni workflows de GitHub Actions. Para la vista local con Vite, los mismos valores pueden guardarse en `public/config.js`.
 
-Otra opción es ejecutar `npm run build` y publicar **el contenido de `dist`** desde una rama. Para conectar Supabase en esa modalidad, las variables deben existir al compilar.
+Para publicar cambios futuros al código, ejecutá `npm run build:pages` y subí los cambios de código y `docs`. El comando conserva la configuración existente de `docs/config.js`. Si editaste en GitHub, ejecutá `git pull --ff-only` antes de trabajar localmente.
+
+Pasos detallados, incluida la creación de la cuenta de Jessica, en **PUBLICAR.md**.
 
 ## Funciones
 

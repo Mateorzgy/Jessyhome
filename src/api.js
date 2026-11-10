@@ -1,7 +1,8 @@
 import { createClient } from "@supabase/supabase-js";
 import { demoCategories, demoProducts } from "./data";
-const url = import.meta.env.VITE_SUPABASE_URL,
-  key = import.meta.env.VITE_SUPABASE_ANON_KEY;
+const config = window.JESSYHOME_CONFIG || {};
+const url = config.supabaseUrl || import.meta.env.VITE_SUPABASE_URL,
+  key = config.supabaseKey || import.meta.env.VITE_SUPABASE_ANON_KEY;
 export const isDemo = !url && !key;
 export const configError =
   !url !== !key
